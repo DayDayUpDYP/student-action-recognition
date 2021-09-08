@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
-
 import cv2
+from utils.ImageProcess import split_person_dict
 
 
 class Visualizer:
@@ -90,25 +90,12 @@ class Visualizer:
                 img = cv2.line(img, (x1, y1), (x2, y2), line_color[index], 2)
         return img
 
-    @staticmethod
-    def find_person(img_data):
-        index = 0
-        max_area = 0
-        for i, person in enumerate(img_data):
-            area = person['box'][2] * person['box'][3]
-            if area > max_area:
-                max_area = area
-                index = i
-        return img_data[index]
-
     def __init__(self, img_path, json_path):
         self.img_path = Path(img_path)
         with open(json_path, 'r') as fp:
             self.json_file = json.load(fp)
-        self.img_data = Visualizer.find_person(
-            [meta for meta in self.json_file if meta['image_id'] == self.img_path.name]
-        )
-        print(self.img_data)
+        self.img_data = split_person_dict(self.img_path.name, self.json_file)
+        # print(self.img_data)
 
     def show_img(self, img):
         shape = img.shape[:2]
