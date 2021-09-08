@@ -29,9 +29,9 @@ def std_coordinate(std_h, std_w, box, keypoints):
 
 
 class ImageProcess:
-    def __init__(self, in_path, out_path):
+    def __init__(self, in_path):
         self.in_path = Path(in_path)
-        self.out_path = Path(out_path)
+        # self.out_path = Path(out_path)
         with open(self.in_path / 'alphapose-results.json', 'r') as fp:
             self.json_file = json.load(fp)
 
@@ -53,14 +53,15 @@ class ImageProcess:
     def get_keypoints(self, keypoints_num, std_h, std_w):
         for img_path in self.in_path.rglob('*.jpg'):
             keypoints = self.__get_keypoints__(img_path, keypoints_num, std_h, std_w)
-            yield keypoints
+            yield img_path.stem, keypoints
 
-    def get_dism(self, keypoints_num, std_h, std_w):
-        for keypoints in self.get_keypoints(keypoints_num, std_h, std_w):
-            yield ImageProcess.__get_matrix__(keypoints, keypoints_num)
+    def get_data(self, keypoints_num, std_h, std_w):
+        for img_name, keypoints in self.get_keypoints(keypoints_num, std_h, std_w):
+            yield img_name, keypoints, ImageProcess.__get_matrix__(keypoints, keypoints_num)
 
 
 if __name__ == '__main__':
-    ip = ImageProcess(in_path='../../test/resource/res', out_path='')
-    for m in ip.get_dism(26, 5, 5):
-        print(m)
+    ip = ImageProcess(in_path='../../test/resource/res')
+    for name, m in ip.get_data(26, 5, 5):
+        print(name, m)
+        input()
