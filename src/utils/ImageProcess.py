@@ -25,6 +25,7 @@ def std_coordinate(std_h, std_w, box, keypoints):
     np_points = np.array(keypoints).reshape((136, 3))
     np_points[:, 0] = (np_points[:, 0] - x) / h * std_h
     np_points[:, 1] = (np_points[:, 1] - y) / w * std_w
+    np_points[np_points < 0] = 0
     return np_points
 
 

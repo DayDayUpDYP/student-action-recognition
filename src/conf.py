@@ -4,4 +4,4 @@ NAME_MAP = {
     'stand': 2
 }
 
-EPOCH = 200
+EPOCH = 100

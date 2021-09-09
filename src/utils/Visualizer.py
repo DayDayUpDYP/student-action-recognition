@@ -14,6 +14,13 @@ class Visualizer:
         return cv2.rectangle(img, (x, y), (x + h, y + w), (0, 0, 255), 2)
 
     @staticmethod
+    def show_label(img, img_data, label):
+        x = int(img_data['box'][0])
+        y = int(img_data['box'][1])
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        return cv2.putText(img, label, (x, y), font, 0.8, (0, 255, 0), 1)
+
+    @staticmethod
     def show_keypoint(img, img_data):
         for i in range(0, 26, 3):
             x = img_data['keypoints'][i]

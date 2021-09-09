@@ -5,9 +5,18 @@ from dataset import KeyPointDataset
 from torch.utils.data import DataLoader
 
 from models import KeyPointLearner
+
 from conf import *
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+
+def save_model(path, model: nn.Module):
+    torch.save(model.state_dict(), path)
+
+
+def load_model(path, model: nn.Module):
+    model.load_state_dict(torch.load(path))
 
 
 def train(dataloader, learner, criterion, optimizer):
@@ -17,16 +26,14 @@ def train(dataloader, learner, criterion, optimizer):
             keypoints = keypoints.to(device).float()
             keypoints_m = keypoints_m.to(device).float()
             pred = learner(keypoints, keypoints_m)
+            # print(keypoints.type(), keypoints_m.type())
             # print(pred.size(), label.size())
             loss_v = criterion(input=pred, target=label)
             optimizer.zero_grad()
             loss_v.backward()
             optimizer.step()
-            if sub % 50 == 0:
+            if (sub * i_epoch + 1) % 100 == 0:
                 print(f'loss = {loss_v}')
-                pred_res = pred.argmax(dim=1)
-                correct = (pred_res == label).sum().item()
-                # print(f'correct = {correct * 1. / 16 * 100}%')
 
 
 def test(dataloader, learner):
@@ -63,4 +70,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(learner.parameters(), lr=0.002)
 
     train(train_dataloader, learner, criterion, optimizer)
+
+    save_model('../test/resource/model.pkl', learner)
+
     test(val_dataloader, learner)
