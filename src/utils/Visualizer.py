@@ -11,14 +11,14 @@ class Visualizer:
         y = int(img_data['box'][1])
         h = int(img_data['box'][2])
         w = int(img_data['box'][3])
-        return cv2.rectangle(img, (x, y), (x + h, y + w), (0, 0, 255), 2)
+        return cv2.rectangle(img, (x, y), (x + h, y + w), (128, 128, 128), 2)
 
     @staticmethod
-    def show_label(img, img_data, label):
+    def show_label(img, img_data, label, clr):
         x = int(img_data['box'][0])
         y = int(img_data['box'][1])
         font = cv2.FONT_HERSHEY_SIMPLEX
-        return cv2.putText(img, label, (x, y), font, 0.8, (0, 255, 0), 1)
+        return cv2.putText(img, label, (x, y), font, 0.8, clr, 1)
 
     @staticmethod
     def show_keypoint(img, img_data):
@@ -79,7 +79,7 @@ class Visualizer:
 
         nodes = []
 
-        for i in range(0, 408, 3):
+        for i in range(0, 78, 3):
             x = int(img_data['keypoints'][i])
             y = int(img_data['keypoints'][i + 1])
             p = img_data['keypoints'][i + 2]
@@ -122,8 +122,26 @@ class Visualizer:
 
 if __name__ == '__main__':
 
-    path = Path('../../test/resource/output/sit')
-    for img_path in path.rglob("*.jpg"):
-        vis = Visualizer(img_path=str(img_path),
-                         json_path='../../test/resource/res/alphapose-results.json')
-        vis.visualize(1)
+    l = [
+        (0, 1), (0, 2), (1, 3), (2, 4),  # Head
+        (5, 18), (6, 18), (5, 7), (7, 9), (6, 8), (8, 10),  # Body
+        (17, 18), (18, 19), (19, 11), (19, 12),
+        (11, 13), (12, 14), (13, 15), (14, 16),
+        (20, 24), (21, 25), (23, 25), (22, 24), (15, 24), (16, 25),  # Foot
+    ]
+
+    m = [[0] * 26 for i in range(26)]
+
+    for x, y in l:
+        m[x][y] = 1
+        m[y][x] = 1
+    for i in range(11):
+        m[i][i] = 1
+    for i in range(11):
+        print(m[i][:11])
+
+    # path = Path('../../test/resource/scene')
+    # for img_path in path.rglob("*.jpg"):
+    #     vis = Visualizer(img_path=str(img_path),
+    #                      json_path=path / 'alphapose-results.json')
+    #     vis.visualize(1)

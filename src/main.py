@@ -9,6 +9,7 @@ from models import KeyPointLearner
 from conf import *
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(device)
 
 
 def save_model(path, model: nn.Module):
@@ -33,7 +34,7 @@ def train(dataloader, learner, criterion, optimizer):
             loss_v.backward()
             optimizer.step()
             if (sub * i_epoch + 1) % 100 == 0:
-                print(f'loss = {loss_v}')
+                print(f'epoch = {i_epoch}, loss = {loss_v}')
 
 
 def test(dataloader, learner):
@@ -52,22 +53,22 @@ def test(dataloader, learner):
 
 if __name__ == '__main__':
     train_dataloader = DataLoader(
-        KeyPointDataset('../test/resource/res'),
-        batch_size=16,
+        KeyPointDataset('../test/resource/output', keypoint_num=11),
+        batch_size=32,
         shuffle=True,
         num_workers=0
     )
 
     val_dataloader = DataLoader(
-        KeyPointDataset('../test/resource/res2'),
-        batch_size=16,
+        KeyPointDataset('../test/resource/val', keypoint_num=11),
+        batch_size=32,
         shuffle=True,
         num_workers=0
     )
 
     learner = KeyPointLearner().to(device)
     criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(learner.parameters(), lr=0.002)
+    optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
 
     train(train_dataloader, learner, criterion, optimizer)
 

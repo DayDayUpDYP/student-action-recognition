@@ -2,6 +2,40 @@ import torch
 
 from torch.nn.modules import Module
 from torch.nn import *
+import numpy as np
+
+
+class AttentionMap(Module):
+    def __init__(self, channels, in_dim):
+        super().__init__()
+        adj = [
+            [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+        ]
+        self.A = Parameter(torch.Tensor(adj), requires_grad=False)
+        d = np.sum(adj, axis=1)
+        d = np.diag(d)
+        d = np.linalg.cholesky(d)
+        d = np.linalg.inv(d)
+        self.D = Parameter(torch.Tensor(d), requires_grad=False)
+        self.W = Parameter(torch.ones(size=(in_dim, in_dim)), requires_grad=True)
+
+    def forward(self, x):
+        # print(x.size(), self.attention.size())
+        res = torch.mm(self.D, self.A)
+        res = torch.mm(res, self.D)
+        res = torch.matmul(res, x)
+        res = torch.matmul(res, self.W)
+        return res
 
 
 class KeyPointLearner(Module):
@@ -12,40 +46,27 @@ class KeyPointLearner(Module):
 
     def __init__(self, keypoints_num=26):
         super().__init__()
-        self.kp_num = keypoints_num
-        self.kp_model = [
-            # 1x26x3 -> 8x26x1
-            Conv2d(1, 8, kernel_size=3, stride=1, padding=0),
-            # 8x26x1 -> 4x7x1
-            Conv2d(8, 4, kernel_size=(2, 1), stride=(4, 1), padding=0),
-            Flatten()
-        ]
+        self.attention = AttentionMap(1, 11)
         self.kpm_model = [
-            # 26 / 2 -> 13
-            Conv2d(1, 8, kernel_size=2, stride=2, padding=0),
-            # 13 / 2 -> 6
-            Conv2d(8, 1, kernel_size=2, stride=2, padding=0),
+            # Conv2d(1, 8, kernel_size=3, stride=1, padding=1),
+            AttentionMap(1, 11),
+            LeakyReLU(inplace=True),
+            # AttentionMap(8, keypoints_num),
+            AttentionMap(1, 11),
+            LeakyReLU(inplace=True),
+            # AttentionMap(8, keypoints_num),
+            AttentionMap(1, 11),
+            LeakyReLU(inplace=True),
             Flatten(),
-            Linear(6 * 6, 7),
-            ReLU(inplace=True)
+            Linear(11 * 11, 64, bias=True),
+            LeakyReLU(inplace=True),
+            Linear(64, 3, bias=True),
+            Softmax(dim=1),
         ]
-        self.kp_model = Sequential(*self.kp_model)
         self.kpm_model = Sequential(*self.kpm_model)
 
-        self.end_model = [
-            Linear(31, 16, bias=True),
-            ReLU(),
-            # 3 class
-            Linear(16, 3, bias=False),
-            Softmax(dim=1)
-        ]
-        self.end_model = Sequential(*self.end_model)
-
     def forward(self, kp, kpm):
-        kpv = self.kp_model(kp)
-        kpmv = self.kpm_model(kpm)
-        end = torch.cat([kpv, kpmv], dim=1)
-        res = self.end_model(end)
+        res = self.kpm_model(kpm)
         return res
 
 

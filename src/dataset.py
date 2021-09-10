@@ -8,7 +8,7 @@ from torchvision.transforms import transforms
 
 
 class KeyPointDataset(Dataset):
-    def __init__(self, base_path, keypoint_num=26, std_h=5, std_w=5):
+    def __init__(self, base_path, keypoint_num=26, std_h=1, std_w=1):
         self.transform_1 = transforms.Compose([
             transforms.ToTensor()
         ])
