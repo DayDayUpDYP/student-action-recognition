@@ -24,10 +24,10 @@ def split_person_dict(img_name, dict_all):
     return find_person([meta for meta in dict_all if meta['image_id'] == img_name])
 
 
-def std_coordinate(std_h, std_w, box, keypoints):
+def std_coordinate(std_h, std_w, box, keypoints, kp_total):
     x, y, h, w = box
-    np_points = np.array(keypoints).reshape((26, 3))
-    # np_points = np.array(keypoints).reshape((136, 3))
+    # np_points = np.array(keypoints).reshape((26, 3))
+    np_points = np.array(keypoints).reshape((len(keypoints) // 3, 3))
     np_points[:, 0] = (np_points[:, 0] - x) / h * std_h
     np_points[:, 1] = (np_points[:, 1] - y) / w * std_w
     np_points[np_points < 0] = 0
@@ -45,7 +45,9 @@ class ImageProcess:
         person_dict = split_person_dict(img_path.name, self.json_file)
         if person_dict is None:
             return None
-        keypoints_xyp = std_coordinate(std_h, std_w, person_dict['box'], person_dict['keypoints'])
+        # if len(person_dict['keypoints']) == 408:
+        #     print(person_dict['image_id'])
+        keypoints_xyp = std_coordinate(std_h, std_w, person_dict['box'], person_dict['keypoints'], 26)
         return keypoints_xyp[:keypoints_num]
 
     @staticmethod
@@ -55,11 +57,14 @@ class ImageProcess:
             l = np.array([line[:2]])
             temp = (np.repeat(l, num, -2) - keypoints[:, :2]) ** 2
             temp = np.sqrt(np.sum(temp, axis=1))
-            # temp = temp / np.sum(temp / (1 + np.exp(keypoints[:, 2])))
+            # temp = temp / np.sum(temp)
             # temp = temp / keypoints[:, 2]
             # print(temp.size())
             # temp = (temp - np.mean(temp)) / np.std(temp)
             result[i] = temp
+        # keypoints_p = np.array([keypoints[:, 2]])
+        # keypoints_p = np.matmul(np.transpose(keypoints_p), keypoints_p)
+        # result = result / (1 + np.exp(keypoints_p))
         return result
 
     def get_keypoints(self, keypoints_num, std_h, std_w):

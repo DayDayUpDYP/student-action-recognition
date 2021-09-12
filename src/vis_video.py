@@ -33,7 +33,7 @@ def check_frame(sub, data):
     return False
 
 
-def paint(frame, frame_sub, frame_data, learner, scan_cnt):
+def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
     if not check_frame(frame_sub, frame_data):
         return frame
     person_list = frame_data[frame_sub]
@@ -41,8 +41,8 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt):
     for element in person_list:
         if element['score'] > 1.:
             np_keypoints = np.array(element['keypoints'])
-            np_keypoints = std_coordinate(1, 1, element['box'], np_keypoints)[:11, :]
-            keypoints_m = ImageProcess.__get_matrix__(np_keypoints, 11)
+            np_keypoints = std_coordinate(1, 1, element['box'], np_keypoints, 26)[:keypoints_num, :]
+            keypoints_m = ImageProcess.__get_matrix__(np_keypoints, keypoints_num)
             keypoints = transforms.ToTensor()(np_keypoints)
             keypoints_m = transforms.ToTensor()(keypoints_m)
 
@@ -52,13 +52,14 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt):
             pred = learner(keypoints, keypoints_m).argmax(dim=1)
             for k, v in NAME_MAP.items():
                 if v == pred.item():
-                    img = Visualizer.show_anchor(frame, element)
+                    frame = Visualizer.show_anchor(frame, element)
+                    # frame = Visualizer.show_line(frame, element)
                     clr = (0, 0, 255)
                     if k == 'stand':
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    img = Visualizer.show_label(img, element, k, clr)
+                    frame = Visualizer.show_label(frame, element, k, clr)
             cnt += 1
             if cnt == scan_cnt:
                 return frame
@@ -79,10 +80,10 @@ if __name__ == '__main__':
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter('../test/resource/video/output.avi', fourcc, 30, (frame_w, frame_h))
     frame_cnt = 0
-    while (True):
+    while True:
         ret, frame = cap.read()
         if ret:
-            frame = paint(frame, frame_cnt, frame_data, learner, 10)
+            frame = paint(frame, frame_cnt, frame_data, learner, -1, keypoints_num=26)
             frame_cnt += 1
             out.write(frame)
             cv2.imshow("frame", frame)

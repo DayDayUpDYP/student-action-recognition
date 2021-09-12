@@ -26,7 +26,7 @@ class Validation:
             for i, element in enumerate(self.json_file):
                 if element['image_id'] == img_file.name and element['score'] > 1.:
                     np_keypoints = np.array(element['keypoints'])
-                    np_keypoints = std_coordinate(1, 1, element['box'], np_keypoints)[:11, :]
+                    np_keypoints = std_coordinate(1, 1, element['box'], np_keypoints, 136)[:11, :]
                     keypoints_m = ImageProcess.__get_matrix__(np_keypoints, 11)
                     keypoints = transforms.ToTensor()(np_keypoints)
                     keypoints_m = transforms.ToTensor()(keypoints_m)

@@ -5,21 +5,45 @@ from torch.nn import *
 import numpy as np
 
 
-class AttentionMap(Module):
+class AttentionLayer(Module):
+    def __init__(self, channels, in_dim):
+        super().__init__()
+        self.atten = Parameter(torch.Tensor(np.diag([1] * in_dim)), requires_grad=True)
+
+    def forward(self, x):
+        return torch.matmul(x, self.atten)
+
+
+class GCNLayer(Module):
     def __init__(self, channels, in_dim):
         super().__init__()
         adj = [
-            [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-            [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+            [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1]
         ]
         self.A = Parameter(torch.Tensor(adj), requires_grad=False)
         d = np.sum(adj, axis=1)
@@ -35,7 +59,7 @@ class AttentionMap(Module):
         res = torch.mm(res, self.D)
         res = torch.matmul(res, x)
         res = torch.matmul(res, self.W)
-        return res
+        return res + x
 
 
 class KeyPointLearner(Module):
@@ -46,21 +70,26 @@ class KeyPointLearner(Module):
 
     def __init__(self, keypoints_num=26):
         super().__init__()
-        self.attention = AttentionMap(1, 11)
+        self.attention = AttentionLayer(1, keypoints_num)
+
         self.kpm_model = [
             # Conv2d(1, 8, kernel_size=3, stride=1, padding=1),
-            AttentionMap(1, 11),
-            LeakyReLU(inplace=True),
+            AttentionLayer(1, keypoints_num),
+            GCNLayer(1, keypoints_num),
+            ReLU(inplace=True),
             # AttentionMap(8, keypoints_num),
-            AttentionMap(1, 11),
-            LeakyReLU(inplace=True),
+            AttentionLayer(1, keypoints_num),
+            GCNLayer(1, keypoints_num),
+            ReLU(inplace=True),
             # AttentionMap(8, keypoints_num),
-            AttentionMap(1, 11),
-            LeakyReLU(inplace=True),
+            AttentionLayer(1, keypoints_num),
+            GCNLayer(1, keypoints_num),
+            ReLU(inplace=True),
             Flatten(),
-            Linear(11 * 11, 64, bias=True),
-            LeakyReLU(inplace=True),
-            Linear(64, 3, bias=True),
+            Linear(keypoints_num * keypoints_num, 100, bias=True),
+            ReLU(inplace=True),
+            Dropout(0.3),
+            Linear(100, 3, bias=True),
             Softmax(dim=1),
         ]
         self.kpm_model = Sequential(*self.kpm_model)

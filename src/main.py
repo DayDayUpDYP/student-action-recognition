@@ -53,14 +53,14 @@ def test(dataloader, learner):
 
 if __name__ == '__main__':
     train_dataloader = DataLoader(
-        KeyPointDataset('../test/resource/output', keypoint_num=11),
+        KeyPointDataset('../test/resource/output', keypoint_num=26),
         batch_size=32,
         shuffle=True,
         num_workers=0
     )
 
     val_dataloader = DataLoader(
-        KeyPointDataset('../test/resource/val', keypoint_num=11),
+        KeyPointDataset('../test/resource/val', keypoint_num=26),
         batch_size=32,
         shuffle=True,
         num_workers=0

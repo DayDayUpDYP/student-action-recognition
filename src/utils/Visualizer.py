@@ -11,14 +11,14 @@ class Visualizer:
         y = int(img_data['box'][1])
         h = int(img_data['box'][2])
         w = int(img_data['box'][3])
-        return cv2.rectangle(img, (x, y), (x + h, y + w), (128, 128, 128), 2)
+        return cv2.rectangle(img, (x, y), (x + h, y + w), (0, 255, 0), 1)
 
     @staticmethod
     def show_label(img, img_data, label, clr):
         x = int(img_data['box'][0])
         y = int(img_data['box'][1])
         font = cv2.FONT_HERSHEY_SIMPLEX
-        return cv2.putText(img, label, (x, y), font, 0.8, clr, 1)
+        return cv2.putText(img, label, (x, y), font, 0.8, clr, 2)
 
     @staticmethod
     def show_keypoint(img, img_data):
@@ -132,13 +132,15 @@ if __name__ == '__main__':
 
     m = [[0] * 26 for i in range(26)]
 
+    kp_num = 26
+
     for x, y in l:
         m[x][y] = 1
         m[y][x] = 1
-    for i in range(11):
+    for i in range(kp_num):
         m[i][i] = 1
-    for i in range(11):
-        print(m[i][:11])
+    for i in range(kp_num):
+        print(m[i][:kp_num])
 
     # path = Path('../../test/resource/scene')
     # for img_path in path.rglob("*.jpg"):
