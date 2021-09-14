@@ -11,6 +11,9 @@ from models import KeyPointLearner
 from conf import *
 from utils.Visualizer import Visualizer
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(device)
+
 
 def split_frame_json(json_file):
     res = []
@@ -43,17 +46,22 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
             np_keypoints = np.array(element['keypoints'])
             np_keypoints = std_coordinate(1, 1, element['box'], np_keypoints, 26)[:keypoints_num, :]
             keypoints_m = ImageProcess.__get_matrix__(np_keypoints, keypoints_num)
-            keypoints = transforms.ToTensor()(np_keypoints)
             keypoints_m = transforms.ToTensor()(keypoints_m)
-
-            keypoints = torch.unsqueeze(keypoints, dim=0).to(torch.float)
             keypoints_m = torch.unsqueeze(keypoints_m, dim=0).to(torch.float)
 
-            pred = learner(keypoints, keypoints_m).argmax(dim=1)
+            keypoints_pm = np.array([np_keypoints[:, 2]])
+            keypoints_pm = np.matmul(np.transpose(keypoints_pm), keypoints_pm)
+            keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
+            keypoints_pm = transforms.ToTensor()(keypoints_pm)
+            keypoints_pm = torch.unsqueeze(keypoints_pm, dim=0).to(torch.float)
+
+            keypoints_pm = keypoints_pm.to(device)
+            keypoints_m = keypoints_m.to(device)
+            pred = learner(keypoints_pm, keypoints_m).argmax(dim=1)
             for k, v in NAME_MAP.items():
                 if v == pred.item():
                     frame = Visualizer.show_anchor(frame, element)
-                    # frame = Visualizer.show_line(frame, element)
+                    frame = Visualizer.show_line(frame, element)
                     clr = (0, 0, 255)
                     if k == 'stand':
                         clr = (255, 0, 0)
@@ -71,7 +79,7 @@ if __name__ == '__main__':
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
-    learner = KeyPointLearner()
+    learner = KeyPointLearner().to(device)
     load_model('../test/resource/model.pkl', learner)
 
     cap = cv2.VideoCapture("../test/resource/video/demo_stand_sit.avi")  # 读取视频文件
@@ -83,7 +91,7 @@ if __name__ == '__main__':
     while True:
         ret, frame = cap.read()
         if ret:
-            frame = paint(frame, frame_cnt, frame_data, learner, -1, keypoints_num=26)
+            frame = paint(frame, frame_cnt, frame_data, learner, 5, keypoints_num=26)
             frame_cnt += 1
             out.write(frame)
             cv2.imshow("frame", frame)

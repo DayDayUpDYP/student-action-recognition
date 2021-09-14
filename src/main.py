@@ -22,11 +22,11 @@ def load_model(path, model: nn.Module):
 
 def train(dataloader, learner, criterion, optimizer):
     for i_epoch in range(EPOCH):
-        for sub, (label, keypoints, keypoints_m) in enumerate(dataloader):
+        for sub, (label, keypoints_pm, keypoints_m) in enumerate(dataloader):
             label = label.to(device)
-            keypoints = keypoints.to(device).float()
+            keypoints_pm = keypoints_pm.to(device).float()
             keypoints_m = keypoints_m.to(device).float()
-            pred = learner(keypoints, keypoints_m)
+            pred = learner(keypoints_pm, keypoints_m)
             # print(keypoints.type(), keypoints_m.type())
             # print(pred.size(), label.size())
             loss_v = criterion(input=pred, target=label)
