@@ -88,11 +88,27 @@ if __name__ == '__main__':
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter('../test/resource/video/output.avi', fourcc, 30, (frame_w, frame_h))
     frame_cnt = 0
+
+    cap_cnt = 0
+    gap_cnt = 0
+    is_painting = False
+
     while True:
         ret, frame = cap.read()
         if ret:
-            frame = paint(frame, frame_cnt, frame_data, learner, 5, keypoints_num=26)
             frame_cnt += 1
+            if is_painting:
+                cap_cnt += 1
+                if cap_cnt == 90:
+                    is_painting = False
+                    cap_cnt = 0
+                frame = paint(frame, frame_cnt, frame_data, learner, 5, keypoints_num=26)
+            else:
+                gap_cnt += 1
+                if gap_cnt == 90:
+                    is_painting = True
+                    gap_cnt = 0
+
             out.write(frame)
             cv2.imshow("frame", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):

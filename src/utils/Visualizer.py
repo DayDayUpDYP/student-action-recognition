@@ -6,12 +6,12 @@ from utils.ImageProcess import split_person_dict
 
 class Visualizer:
     @staticmethod
-    def show_anchor(img, img_data):
+    def show_anchor(img, img_data, color=(0, 255, 0)):
         x = int(img_data['box'][0])
         y = int(img_data['box'][1])
         h = int(img_data['box'][2])
         w = int(img_data['box'][3])
-        return cv2.rectangle(img, (x, y), (x + h, y + w), (0, 255, 0), 1)
+        return cv2.rectangle(img, (x, y), (x + h, y + w), color, 2)
 
     @staticmethod
     def show_label(img, img_data, label, clr):

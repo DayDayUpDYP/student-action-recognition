@@ -81,7 +81,8 @@ class ImageProcess:
     def get_data(self, keypoints_num, std_h, std_w):
         for img_name, keypoints in self.get_keypoints(keypoints_num, std_h, std_w):
             keypoints_pm = np.array([keypoints[:, 2]])
-            keypoints_pm = np.matmul(np.transpose(keypoints_pm), keypoints_pm)
+            keypoints_pm = np.repeat(keypoints_pm, repeats=26, axis=0)
+            # keypoints_pm = np.matmul(np.transpose(keypoints_pm), keypoints_pm)
             keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
             yield img_name, keypoints_pm, ImageProcess.__get_matrix__(keypoints, keypoints_num)
 

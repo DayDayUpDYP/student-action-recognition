@@ -51,7 +51,7 @@ class GCNLayer(Module):
         d = np.linalg.cholesky(d)
         d = np.linalg.inv(d)
         self.D = Parameter(torch.Tensor(d), requires_grad=False)
-        self.W = Parameter(torch.ones(size=(in_dim, in_dim)), requires_grad=True)
+        self.W = Parameter(torch.randn(size=(in_dim, in_dim)), requires_grad=True)
 
     def forward(self, x):
         # print(x.size(), self.attention.size())
