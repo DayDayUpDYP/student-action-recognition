@@ -54,7 +54,10 @@ class GCNLayer(Module):
         # res = torch.mm(res, self.D)
         # res = self.A * x
         res = torch.matmul(x, self.W)
-        # res = res * x
+        sf = Softmax(dim=3)
+        res = sf(res)
+
+        res = torch.matmul(res, x)
         # res = ax * x
         # res = torch.matmul(x, self.W)
         return res
@@ -73,28 +76,30 @@ class KeyPointLearner(Module):
         self.kpm_model = [
             # Conv2d(1, 8, kernel_size=3, stride=1, padding=1),
             # AttentionLayer(1, keypoints_num),
-            InstanceNorm2d(1),
+            LayerNorm(26),
             GCNLayer(1, keypoints_num),
-            Sigmoid(),
+            LeakyReLU(),
             # AttentionMap(8, keypoints_num),
             # AttentionLayer(1, keypoints_num),
             GCNLayer(1, keypoints_num),
-            Sigmoid(),
+            LeakyReLU(),
             # AttentionMap(8, keypoints_num),
             # AttentionLayer(1, keypoints_num),
             GCNLayer(1, keypoints_num),
-            Sigmoid(),
+            LeakyReLU(),
         ]
 
         self.end_model = [
             # BatchNorm2d(1),
             Flatten(),
-            Linear(keypoints_num * keypoints_num, 256),
-            Sigmoid(),
+            Linear(keypoints_num, 13),
+            LeakyReLU(),
             Dropout(0.3),
-            Linear(256, 3, bias=True),
+            Linear(13, 3, bias=True),
             Softmax(dim=1),
         ]
+
+        self.prob_atten = Parameter(torch.randn(size=(keypoints_num, keypoints_num)), requires_grad=True)
 
         self.end_model = Sequential(*self.end_model)
 
@@ -107,7 +112,17 @@ class KeyPointLearner(Module):
 
         # res = self.kpm_model(kpm)
         res = self.kpm_model(kpm)
-        res = torch.sum(res, dim=1)
+
+        kp_permute = torch.matmul(kp, kp.permute(0, 1, 3, 2))
+        kp_atten = self.prob_atten * kp_permute
+        sf = Softmax(2)
+        kp_atten = sf(kp_atten)
+
+        kp = torch.matmul(kp_atten, kp)
+
+        res = torch.matmul(res, kp)
+
+        # res = torch.sum(res, dim=1)
         res = self.end_model(res)
         return res
 

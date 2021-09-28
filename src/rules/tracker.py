@@ -115,4 +115,4 @@ if __name__ == '__main__':
                       learner=learner)
     tracker.track()
 
-    tracker.plot_track(11)
+    tracker.plot_track(36)

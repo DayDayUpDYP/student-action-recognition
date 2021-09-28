@@ -30,7 +30,7 @@ def std_coordinate(std_h, std_w, box, keypoints, kp_total):
     np_points = np.array(keypoints).reshape((len(keypoints) // 3, 3))
     np_points[:, 0] = (np_points[:, 0] - x) / h * std_h
     np_points[:, 1] = (np_points[:, 1] - y) / w * std_w
-    np_points[np_points < 0] = 0
+    # np_points[np_points < 0] = 0
     return np_points
 
 
@@ -53,10 +53,12 @@ class ImageProcess:
     @staticmethod
     def __get_matrix__(keypoints, num):
         l = np.array([keypoints[0][:2]])
+        # keypoints = np.array(keypoints)
+        # keypoints[:, 0] = keypoints[:, 0] * keypoints[:, 2]
+        # keypoints[:, 1] = keypoints[:, 1] * keypoints[:, 2]
         result = np.repeat(l, num, -2) - keypoints[:, :2]
         # result = result * np.repeat(np.array([keypoints[:, 2]]), 2, 0).T
         result = result @ result.T
-        # result = result * np.array([keypoints[:, 2]]).T
         # for i, line in enumerate(keypoints):
         #     l = np.array([line[:2]])
         #     temp = (np.repeat(l, num, -2) - keypoints[:, :2])
@@ -81,10 +83,10 @@ class ImageProcess:
 
     def get_data(self, keypoints_num, std_h, std_w):
         for img_name, keypoints in self.get_keypoints(keypoints_num, std_h, std_w):
-            keypoints_pm = np.array([keypoints[:, 2]])
-            keypoints_pm = np.repeat(keypoints_pm, repeats=26, axis=0)
+            keypoints_pm = np.array([keypoints[:, 2]]).T
+            # keypoints_pm = np.repeat(keypoints_pm, repeats=26, axis=0)
             # keypoints_pm = np.matmul(np.transpose(keypoints_pm), keypoints_pm)
-            keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
+            # keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
             yield img_name, keypoints_pm, ImageProcess.__get_matrix__(keypoints, keypoints_num)
 
 

@@ -52,9 +52,9 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
             keypoints_m = transforms.ToTensor()(keypoints_m)
             keypoints_m = torch.unsqueeze(keypoints_m, dim=0).to(torch.float)
 
-            keypoints_pm = np.array([np_keypoints[:, 2]])
-            keypoints_pm = np.matmul(np.transpose(keypoints_pm), keypoints_pm)
-            keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
+            keypoints_pm = np.array([np_keypoints[:, 2]]).T
+            # keypoints_pm = np.matmul(np.transpose(keypoints_pm), keypoints_pm)
+            # keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
             keypoints_pm = transforms.ToTensor()(keypoints_pm)
             keypoints_pm = torch.unsqueeze(keypoints_pm, dim=0).to(torch.float)
 
@@ -68,10 +68,10 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    # if k == 'sit':
-                    frame = Visualizer.show_anchor(frame, element)
-                    frame = Visualizer.show_line(frame, element)
-                    frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
+                    if k == 'handsup':
+                        frame = Visualizer.show_anchor(frame, element)
+                        frame = Visualizer.show_line(frame, element)
+                        frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
             cnt += 1
             if cnt == scan_cnt:
                 return frame
@@ -79,7 +79,7 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
 
 
 if __name__ == '__main__':
-    with open('../test/resource/video/src_videos/3/alphapose-results.json', 'r') as fp:
+    with open('../test/resource/video/src_videos/2/alphapose-results.json', 'r') as fp:
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     learner.eval()
 
-    cap = cv2.VideoCapture("../test/resource/video/src_videos/3/demo_all_Trim_3.avi")  # 读取视频文件
+    cap = cv2.VideoCapture("../test/resource/video/src_videos/2/demo_all_Trim_2.avi")  # 读取视频文件
     frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if ret:
             frame_cnt += 1
-            frame = paint(frame, frame_cnt, frame_data, learner, 8, keypoints_num=26)
+            frame = paint(frame, frame_cnt, frame_data, learner, -1, keypoints_num=26)
 
             # if is_painting:
             #     cap_cnt += 1
