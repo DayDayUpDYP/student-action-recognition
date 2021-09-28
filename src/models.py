@@ -92,10 +92,10 @@ class KeyPointLearner(Module):
         self.end_model = [
             # BatchNorm2d(1),
             Flatten(),
-            Linear(keypoints_num, 13),
+            Linear(keypoints_num * keypoints_num, 256),
             LeakyReLU(),
             Dropout(0.3),
-            Linear(13, 3, bias=True),
+            Linear(256, 3, bias=True),
             Softmax(dim=1),
         ]
 
@@ -112,15 +112,6 @@ class KeyPointLearner(Module):
 
         # res = self.kpm_model(kpm)
         res = self.kpm_model(kpm)
-
-        kp_permute = torch.matmul(kp, kp.permute(0, 1, 3, 2))
-        kp_atten = self.prob_atten * kp_permute
-        sf = Softmax(2)
-        kp_atten = sf(kp_atten)
-
-        kp = torch.matmul(kp_atten, kp)
-
-        res = torch.matmul(res, kp)
 
         # res = torch.sum(res, dim=1)
         res = self.end_model(res)
