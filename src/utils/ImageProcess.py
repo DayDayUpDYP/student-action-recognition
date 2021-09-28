@@ -52,23 +52,24 @@ class ImageProcess:
 
     @staticmethod
     def __get_matrix__(keypoints, num):
-        result = np.zeros(shape=(num, num))
-        for i, line in enumerate(keypoints):
-            l = np.array([line[:2]])
-            temp = (np.repeat(l, num, -2) - keypoints[:, :2]) ** 2
-            temp = np.sqrt(np.sum(temp, axis=1))
-            temp = temp
-            # temp = temp / keypoints[:, 2]
-            # print(temp.size())
-            # temp = (temp - np.mean(temp)) / np.std(temp)
-            result[i] = temp
-        # keypoints_p = np.array([keypoints[:, 2]])
-        # keypoints_p = np.repeat(keypoints_p, 26, 0)
-        # keypoints_p = np.matmul(np.transpose(keypoints_p), keypoints_p)
-        # result = result / (1 + np.exp(keypoints_p))
-        # adj = np.array(adj)
-        # keypoints_p = keypoints_p * adj
-        # result = result * keypoints_p
+        l = np.array([keypoints[0][:2]])
+        result = np.repeat(l, num, -2) - keypoints[:, :2]
+        # result = result * np.repeat(np.array([keypoints[:, 2]]), 2, 0).T
+        result = result @ result.T
+        # result = result * np.array([keypoints[:, 2]]).T
+        # for i, line in enumerate(keypoints):
+        #     l = np.array([line[:2]])
+        #     temp = (np.repeat(l, num, -2) - keypoints[:, :2])
+        #     temp[i] = (1e-5, 1e-5)
+        #     # temp_2 = np.sqrt(np.sum(temp ** 2, axis=1))
+        #     # temp_2 = np.repeat(temp_2, 2, 0)
+        #     # temp = temp / np.reshape(temp_2, temp.shape)
+        #
+        #     # temp = np.sqrt(np.sum(temp, axis=1))
+        #     # temp = temp / keypoints[:, 2]
+        #     # print(temp.size())
+        #     # temp = (temp - np.mean(temp)) / np.std(temp)
+        #     result[i] = temp
         return result
 
     def get_keypoints(self, keypoints_num, std_h, std_w):

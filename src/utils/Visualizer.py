@@ -14,9 +14,7 @@ class Visualizer:
         return cv2.rectangle(img, (x, y), (x + h, y + w), color, 2)
 
     @staticmethod
-    def show_label(img, img_data, label, clr):
-        x = int(img_data['box'][0])
-        y = int(img_data['box'][1])
+    def show_label(img, x, y, label, clr):
         font = cv2.FONT_HERSHEY_SIMPLEX
         return cv2.putText(img, label, (x, y), font, 0.8, clr, 2)
 
@@ -134,16 +132,16 @@ if __name__ == '__main__':
 
     kp_num = 26
 
-    for x, y in l:
-        m[x][y] = 1
-        m[y][x] = 1
-    for i in range(kp_num):
-        m[i][i] = 1
-    for i in range(kp_num):
-        print(m[i][:kp_num])
+    # for x, y in l:
+    #     m[x][y] = 1
+    #     m[y][x] = 1
+    # for i in range(kp_num):
+    #     m[i][i] = 1
+    # for i in range(kp_num):
+    #     print(m[i][:kp_num])
 
-    # path = Path('../../test/resource/scene')
-    # for img_path in path.rglob("*.jpg"):
-    #     vis = Visualizer(img_path=str(img_path),
-    #                      json_path=path / 'alphapose-results.json')
-    #     vis.visualize(1)
+    path = Path('../../test/resource/output/handsup')
+    for img_path in path.rglob("*.jpg"):
+        vis = Visualizer(img_path=str(img_path),
+                         json_path='../../test/resource/output/alphapose-results.json')
+        vis.visualize(1)

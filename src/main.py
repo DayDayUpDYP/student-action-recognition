@@ -38,6 +38,7 @@ def train(dataloader, learner, criterion, optimizer):
 
 
 def test(dataloader, learner):
+    learner.eval()
     correct = 0
     total = 0
     for sub, (label, keypoints, keypoints_m) in enumerate(dataloader):
@@ -73,5 +74,7 @@ if __name__ == '__main__':
     train(train_dataloader, learner, criterion, optimizer)
 
     save_model('../test/resource/model.pkl', learner)
+
+    load_model('../test/resource/model.pkl', learner)
 
     test(val_dataloader, learner)

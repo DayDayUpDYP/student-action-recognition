@@ -25,6 +25,8 @@ class VideoToImage:
     def convert(self, sub, fps, in_path, out_path):
         capture = cv2.VideoCapture(str(in_path))
         total_frame = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        vid_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        vid_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         for i in range(total_frame):
             ret = capture.grab()
             if not ret:
@@ -36,7 +38,8 @@ class VideoToImage:
                 if ret:
                     self.total_img_cnt += 1
                     (out_path / f'{in_path.parent.name}').mkdir(exist_ok=True)
-                    frame = cv2.flip(cv2.transpose(frame), 1)
+                    if vid_w > vid_h:
+                        frame = cv2.flip(cv2.transpose(frame), 1)
                     cv2.imwrite(str(out_path / f'{in_path.parent.name}/{sub}_{i}.jpg'), frame)
 
 

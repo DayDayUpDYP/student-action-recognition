@@ -45,7 +45,7 @@ class Validation:
                                 clr = (255, 0, 0)
                             elif k == 'handsup':
                                 clr = (0, 255, 0)
-                            img = Visualizer.show_label(img, element, k, clr)
+                            img = Visualizer.show_label(img, int(element['box'][0]), int(element['box'][1]), k, clr)
                             # print(keypoints_m)
                             cv2.imshow(img_file.name, img)
                             cv2.waitKey(0)

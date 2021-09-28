@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 from torchvision.transforms import transforms
 
-from main import load_model
 from utils.ImageProcess import std_coordinate
 from utils.ImageProcess import ImageProcess
 from models import KeyPointLearner
@@ -13,6 +12,10 @@ from utils.Visualizer import Visualizer
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+
+def load_model(path, model: torch.nn.Module):
+    model.load_state_dict(torch.load(path))
 
 
 def split_frame_json(json_file):
@@ -60,14 +63,15 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
             pred = learner(keypoints_pm, keypoints_m).argmax(dim=1)
             for k, v in NAME_MAP.items():
                 if v == pred.item():
-                    frame = Visualizer.show_anchor(frame, element)
-                    frame = Visualizer.show_line(frame, element)
                     clr = (0, 0, 255)
                     if k == 'stand':
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    frame = Visualizer.show_label(frame, element, k, clr)
+                    # if k == 'sit':
+                    frame = Visualizer.show_anchor(frame, element)
+                    frame = Visualizer.show_line(frame, element)
+                    frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
             cnt += 1
             if cnt == scan_cnt:
                 return frame
@@ -75,18 +79,20 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
 
 
 if __name__ == '__main__':
-    with open('../test/resource/video/alphapose-results.json', 'r') as fp:
+    with open('../test/resource/video/src_videos/3/alphapose-results.json', 'r') as fp:
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
     learner = KeyPointLearner().to(device)
     load_model('../test/resource/model.pkl', learner)
 
-    cap = cv2.VideoCapture("../test/resource/video/demo_stand_sit.avi")  # 读取视频文件
+    learner.eval()
+
+    cap = cv2.VideoCapture("../test/resource/video/src_videos/3/demo_all_Trim_3.avi")  # 读取视频文件
     frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('../test/resource/video/output.avi', fourcc, 30, (frame_w, frame_h))
+    out = cv2.VideoWriter('../test/resource/video/output001.avi', fourcc, 30, (frame_w, frame_h))
     frame_cnt = 0
 
     cap_cnt = 0
@@ -97,17 +103,19 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if ret:
             frame_cnt += 1
-            if is_painting:
-                cap_cnt += 1
-                if cap_cnt == 90:
-                    is_painting = False
-                    cap_cnt = 0
-                frame = paint(frame, frame_cnt, frame_data, learner, 5, keypoints_num=26)
-            else:
-                gap_cnt += 1
-                if gap_cnt == 90:
-                    is_painting = True
-                    gap_cnt = 0
+            frame = paint(frame, frame_cnt, frame_data, learner, 8, keypoints_num=26)
+
+            # if is_painting:
+            #     cap_cnt += 1
+            #     if cap_cnt == 120:
+            #         is_painting = False
+            #         cap_cnt = 0
+            #     frame = paint(frame, frame_cnt, frame_data, learner, 5, keypoints_num=26)
+            # else:
+            #     gap_cnt += 1
+            #     if gap_cnt == 90:
+            #         is_painting = True
+            #         gap_cnt = 0
 
             out.write(frame)
             cv2.imshow("frame", frame)
