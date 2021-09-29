@@ -20,7 +20,7 @@ def load_model(path, model: nn.Module):
     model.load_state_dict(torch.load(path))
 
 
-def train(dataloader, learner, criterion, optimizer):
+def train(dataloader, learner, criterion, optimizer, with_metric=False):
     for i_epoch in range(EPOCH):
         for sub, (label, keypoints_pm, keypoints_m) in enumerate(dataloader):
             label = label.to(device)
@@ -33,7 +33,7 @@ def train(dataloader, learner, criterion, optimizer):
             optimizer.zero_grad()
             loss_v.backward()
             optimizer.step()
-            if (sub * i_epoch + 1) % 100 == 0:
+            if (sub * i_epoch + 1) % 100 == 0 and with_metric:
                 print(f'epoch = {i_epoch}, loss = {loss_v}')
 
 
@@ -50,6 +50,7 @@ def test(dataloader, learner):
         correct += (pred_res == label).sum().item()
         total += pred.size()[0]
     print(f'correct rate = {correct * 1.0 / total * 100}%')
+    return correct * 1. / total
 
 
 if __name__ == '__main__':
@@ -67,14 +68,25 @@ if __name__ == '__main__':
         num_workers=0
     )
 
-    learner = KeyPointLearner().to(device)
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
+    total_rate = 0
 
-    train(train_dataloader, learner, criterion, optimizer)
+    for ins_num in range(100):
+        total_rate = 0.
 
-    save_model('../test/resource/model.pkl', learner)
+        for _ in range(CNT):
+            print(f'CNT:{_}')
 
-    load_model('../test/resource/model.pkl', learner)
+            learner = KeyPointLearner(intensify_num=ins_num * 0.1).to(device)
 
-    test(val_dataloader, learner)
+            criterion = nn.CrossEntropyLoss().to(device)
+            optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
+
+            train(train_dataloader, learner, criterion, optimizer, with_metric=False)
+
+            total_rate += test(val_dataloader, learner)
+
+            save_model('../test/resource/model.pkl', learner)
+
+        print(f'intensify_num: {ins_num}, total correct rate: {total_rate / CNT * 100}%')
+
+    # load_model('../test/resource/model.pkl', learner)
