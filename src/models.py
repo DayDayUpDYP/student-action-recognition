@@ -94,12 +94,14 @@ class KeyPointLearner(Module):
 
         self.nonlinear_intensify = [
             Flatten(),
-            Linear(26, 13),
+            Linear(64, 32),
             LeakyReLU(),
-            Linear(13, 26),
+            Linear(32, 26),
             LeakyReLU(),
             Softmax(1),
         ]
+
+        self.nonlinear_intensify_W = Parameter(torch.randn(size=(64, 26)), requires_grad=True)
 
         self.nonlinear_intensify = Sequential(*self.nonlinear_intensify)
 
@@ -137,15 +139,16 @@ class KeyPointLearner(Module):
         self.kpm_model = Sequential(*self.kpm_model)
 
     def forward(self, kp, kpm):
-
         # linear intensify function
         # kp = self.linear_intensify(kp)
         # kp = self.softmax(kp)
 
         # nonlinear intensify function
-        gama = self.nonlinear_intensify(kp)
-        gama = torch.reshape(gama, shape=(gama.shape[0], 1, gama.shape[1], 1))
-        kp = kp + self.intensify_num * (kp - gama)
+        for i in range(3):
+            kpp = torch.matmul(self.nonlinear_intensify_W, kp)
+            gama = self.nonlinear_intensify(kpp)
+            gama = torch.reshape(gama, (gama.shape[0], 1, gama.shape[1], 1))
+            kp = kp + self.intensify_num * (kp - gama)
 
         res = self.kpm_model(kpm)
         res = torch.matmul(res.transpose(-2, -1), kp)

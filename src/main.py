@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     total_rate = 0
 
-    for ins_num in range(100):
+    for ins_num in range(1, 100):
         total_rate = 0.
 
         for _ in range(CNT):

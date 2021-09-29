@@ -68,7 +68,7 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    if k == 'sit':
+                    if k == 'stand':
                         frame = Visualizer.show_anchor(frame, element)
                         frame = Visualizer.show_line(frame, element)
                         frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
