@@ -81,7 +81,7 @@ if __name__ == '__main__':
             criterion = nn.CrossEntropyLoss().to(device)
             optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
 
-            train(train_dataloader, learner, criterion, optimizer, with_metric=False)
+            train(train_dataloader, learner, criterion, optimizer, with_metric=True)
 
             total_rate += test(val_dataloader, learner)
 

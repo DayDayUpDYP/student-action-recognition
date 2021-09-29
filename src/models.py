@@ -80,8 +80,10 @@ class KeyPointLearner(Module):
     input 1 shape = (batch, keypoints_num, keypoints_num)
     """
 
-    def __init__(self, keypoints_num=26, intensify_num=0.3):
+    def __init__(self, keypoints_num=26, intensify_num=1.):
         super().__init__()
+        self.intensify_num = intensify_num
+
         self.attention = AttentionLayer(1, keypoints_num)
         self.softmax = Softmax(2)
         self.linear_intensify = [
@@ -89,6 +91,17 @@ class KeyPointLearner(Module):
         ]
 
         self.linear_intensify = Sequential(*self.linear_intensify)
+
+        self.nonlinear_intensify = [
+            Flatten(),
+            Linear(26, 13),
+            LeakyReLU(),
+            Linear(13, 26),
+            LeakyReLU(),
+            Softmax(1),
+        ]
+
+        self.nonlinear_intensify = Sequential(*self.nonlinear_intensify)
 
         self.gcn = GCNLayer(1, keypoints_num)
 
@@ -125,9 +138,14 @@ class KeyPointLearner(Module):
 
     def forward(self, kp, kpm):
 
-        kp = self.linear_intensify(kp)
+        # linear intensify function
+        # kp = self.linear_intensify(kp)
+        # kp = self.softmax(kp)
 
-        kp = self.softmax(kp)
+        # nonlinear intensify function
+        gama = self.nonlinear_intensify(kp)
+        gama = torch.reshape(gama, shape=(gama.shape[0], 1, gama.shape[1], 1))
+        kp = kp + self.intensify_num * (kp - gama)
 
         res = self.kpm_model(kpm)
         res = torch.matmul(res.transpose(-2, -1), kp)
