@@ -162,14 +162,15 @@ class KeyPointLearnerGAT(Module):
     def __init__(self, gat_layer_num, multi_num):
         super(KeyPointLearnerGAT, self).__init__()
         self.gats = ModuleList()
-        for i in range(gat_layer_num):
+        for i in range(gat_layer_num - 1):
             self.gats.append(GAT(26, 26, multi_num))
+        self.gats.append(GAT(26, 3, multi_num))
 
         self.mlp = [
             Flatten(),
-            Linear(26 * 26, 256),
-            LeakyReLU(negative_slope=0.2),
-            Linear(256, 3),
+            Linear(26 * 3, 3),
+            ELU(),
+            Softmax(dim=1)
         ]
         self.mlp = Sequential(*self.mlp)
 
@@ -180,8 +181,9 @@ class KeyPointLearnerGAT(Module):
 
 
 if __name__ == '__main__':
+    dev = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     # kp = torch.randn(size=(100, 1, 26, 3))
-    kpm = torch.randn(size=(100, 1, 26, 26))
-    kpl = KeyPointLearnerGAT(1, 3)
-    result = kpl(kpm)
+    kpm = torch.randn(size=(100, 1, 26, 26), device=dev)
+    kpl = KeyPointLearnerGAT(3, 3).to(dev)
+    result = kpl(None, kpm)
     print(result.size())
