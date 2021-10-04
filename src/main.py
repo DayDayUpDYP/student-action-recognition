@@ -4,7 +4,7 @@ from torch import nn
 from dataset import KeyPointDataset
 from torch.utils.data import DataLoader
 
-from models import KeyPointLearner
+from models import KeyPointLearner, KeyPointLearnerGAT
 
 from conf import *
 
@@ -70,23 +70,35 @@ if __name__ == '__main__':
 
     total_rate = 0
 
-    for ins_num in range(1, 100):
-        total_rate = 0.
+    learner = KeyPointLearnerGAT(1, 5).to(device)
 
-        for _ in range(CNT):
-            print(f'CNT:{_}')
+    criterion = nn.CrossEntropyLoss().to(device)
 
-            learner = KeyPointLearner(intensify_num=ins_num * 0.1).to(device)
+    optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
 
-            criterion = nn.CrossEntropyLoss().to(device)
-            optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
+    train(train_dataloader, learner, criterion, optimizer, with_metric=True)
 
-            train(train_dataloader, learner, criterion, optimizer, with_metric=True)
+    total_rate += test(val_dataloader, learner)
 
-            total_rate += test(val_dataloader, learner)
+    save_model('../test/resource/model.pkl', learner)
 
-            save_model('../test/resource/model.pkl', learner)
-
-        print(f'intensify_num: {ins_num}, total correct rate: {total_rate / CNT * 100}%')
+    # for ins_num in range(1, 100):
+    #     total_rate = 0.
+    #
+    #     for _ in range(CNT):
+    #         print(f'CNT:{_}')
+    #
+    #         learner = KeyPointLearner(intensify_num=ins_num * 0.1).to(device)
+    #
+    #         criterion = nn.CrossEntropyLoss().to(device)
+    #         optimizer = torch.optim.Adam(learner.parameters(), lr=0.0005, weight_decay=1.e-4)
+    #
+    #         train(train_dataloader, learner, criterion, optimizer, with_metric=True)
+    #
+    #         total_rate += test(val_dataloader, learner)
+    #
+    #         save_model('../test/resource/model.pkl', learner)
+    #
+    #     print(f'intensify_num: {ins_num}, total correct rate: {total_rate / CNT * 100}%')
 
     # load_model('../test/resource/model.pkl', learner)

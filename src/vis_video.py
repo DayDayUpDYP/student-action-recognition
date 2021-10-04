@@ -6,7 +6,7 @@ from torchvision.transforms import transforms
 
 from utils.ImageProcess import std_coordinate
 from utils.ImageProcess import ImageProcess
-from models import KeyPointLearner
+from models import KeyPointLearner, KeyPointLearnerGAT
 from conf import *
 from utils.Visualizer import Visualizer
 
@@ -68,7 +68,7 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    if k == 'stand':
+                    if k == 'handsup':
                         frame = Visualizer.show_anchor(frame, element)
                         frame = Visualizer.show_line(frame, element)
                         frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
@@ -83,7 +83,7 @@ if __name__ == '__main__':
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
-    learner = KeyPointLearner().to(device)
+    learner = KeyPointLearnerGAT(1, 5).to(device)
     load_model('../test/resource/model.pkl', learner)
 
     learner.eval()

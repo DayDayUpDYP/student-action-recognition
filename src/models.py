@@ -3,6 +3,7 @@ import torch
 from torch.nn.modules import Module
 from torch.nn import *
 import numpy as np
+from gat.GAT import GAT
 
 
 class AttentionLayer(Module):
@@ -144,11 +145,11 @@ class KeyPointLearner(Module):
         # kp = self.softmax(kp)
 
         # nonlinear intensify function
-        for i in range(3):
-            kpp = torch.matmul(self.nonlinear_intensify_W, kp)
-            gama = self.nonlinear_intensify(kpp)
-            gama = torch.reshape(gama, (gama.shape[0], 1, gama.shape[1], 1))
-            kp = kp + self.intensify_num * (kp - gama)
+        # for i in range(3):
+        kpp = torch.matmul(self.nonlinear_intensify_W, kp)
+        gama = self.nonlinear_intensify(kpp)
+        gama = torch.reshape(gama, (gama.shape[0], 1, gama.shape[1], 1))
+        kp = kp + self.intensify_num * (kp - gama)
 
         res = self.kpm_model(kpm)
         res = torch.matmul(res.transpose(-2, -1), kp)
@@ -157,9 +158,30 @@ class KeyPointLearner(Module):
         return res
 
 
+class KeyPointLearnerGAT(Module):
+    def __init__(self, gat_layer_num, multi_num):
+        super(KeyPointLearnerGAT, self).__init__()
+        self.gats = ModuleList()
+        for i in range(gat_layer_num):
+            self.gats.append(GAT(26, 26, multi_num))
+
+        self.mlp = [
+            Flatten(),
+            Linear(26 * 26, 256),
+            LeakyReLU(negative_slope=0.2),
+            Linear(256, 3),
+        ]
+        self.mlp = Sequential(*self.mlp)
+
+    def forward(self, _, x):
+        for layer in self.gats:
+            x = layer(x)
+        return self.mlp(x)
+
+
 if __name__ == '__main__':
-    kp = torch.randn(size=(100, 1, 26, 3))
+    # kp = torch.randn(size=(100, 1, 26, 3))
     kpm = torch.randn(size=(100, 1, 26, 26))
-    kpl = KeyPointLearner(26)
-    result = kpl(kp, kpm)
+    kpl = KeyPointLearnerGAT(1, 3)
+    result = kpl(kpm)
     print(result.size())
