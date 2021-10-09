@@ -68,9 +68,9 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    if k == 'sit':
-                        frame = Visualizer.show_anchor(frame, element)
+                    if k == 'handsup':
                         frame = Visualizer.show_line(frame, element)
+                        frame = Visualizer.show_anchor(frame, element)
                         frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
             cnt += 1
             if cnt == scan_cnt:
@@ -79,16 +79,16 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
 
 
 if __name__ == '__main__':
-    with open('../test/resource/video/src_videos/2/alphapose-results.json', 'r') as fp:
+    with open('../test/resource/video/src_videos/3/alphapose-results.json', 'r') as fp:
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
-    learner = KeyPointLearnerGAT(3, 8).to(device)
+    learner = KeyPointLearnerGAT(AT_LAYER, AT_MULTI).to(device)
     load_model('../test/resource/model.pkl', learner)
 
     learner.eval()
 
-    cap = cv2.VideoCapture("../test/resource/video/src_videos/2/demo_all_Trim_2.avi")  # 读取视频文件
+    cap = cv2.VideoCapture("../test/resource/video/src_videos/3/demo_all_Trim_3.avi")  # 读取视频文件
     frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fourcc = cv2.VideoWriter_fourcc(*'XVID')

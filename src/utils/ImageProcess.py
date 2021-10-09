@@ -52,13 +52,18 @@ class ImageProcess:
 
     @staticmethod
     def __get_matrix__(keypoints, num):
-        l = np.array([keypoints[0][:2]])
+        l = np.array([keypoints[19][:2]])
         # keypoints = np.array(keypoints)
         # keypoints[:, 0] = keypoints[:, 0] * keypoints[:, 2]
         # keypoints[:, 1] = keypoints[:, 1] * keypoints[:, 2]
         result = np.repeat(l, num, -2) - keypoints[:, :2]
         # result = result * np.repeat(np.array([keypoints[:, 2]]), 2, 0).T
-        result = result @ result.T
+
+        l1 = np.array([keypoints[0][:2]])
+        result1 = np.repeat(l1, num, -2) - keypoints[:, :2]
+
+        result = result @ result1.T
+
         # for i, line in enumerate(keypoints):
         #     l = np.array([line[:2]])
         #     temp = (np.repeat(l, num, -2) - keypoints[:, :2])

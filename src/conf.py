@@ -4,6 +4,9 @@ NAME_MAP = {
     'stand': 2
 }
 
-EPOCH = 100
+EPOCH = 160
 
 CNT = 10
+
+AT_LAYER = 1
+AT_MULTI = 8

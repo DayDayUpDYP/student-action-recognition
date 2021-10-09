@@ -162,21 +162,23 @@ class KeyPointLearnerGAT(Module):
     def __init__(self, gat_layer_num, multi_num):
         super(KeyPointLearnerGAT, self).__init__()
         self.gats = ModuleList()
-        for i in range(gat_layer_num - 1):
+        # self.gats.append(GAT(26, 26, multi_num))
+        for i in range(gat_layer_num):
             self.gats.append(GAT(26, 26, multi_num))
-        self.gats.append(GAT(26, 3, multi_num))
+        # self.gats.append(GAT(26, 26, multi_num))
 
         self.mlp = [
             Flatten(),
-            Linear(26 * 3, 3),
+            Linear(26 * 26, 256),
             ELU(),
+            Linear(256, 3),
             Softmax(dim=1)
         ]
         self.mlp = Sequential(*self.mlp)
 
     def forward(self, _, x):
         for layer in self.gats:
-            x = layer(x)
+            x = layer(_, x)
         return self.mlp(x)
 
 

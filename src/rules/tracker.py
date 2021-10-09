@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from torchvision.transforms import transforms
 
-from conf import NAME_MAP
-from models import KeyPointLearner
+from conf import NAME_MAP, AT_LAYER, AT_MULTI
+from models import KeyPointLearner, KeyPointLearnerGAT
 from utils.ImageProcess import std_coordinate, ImageProcess
 from utils.Visualizer import Visualizer
 from vis_video import split_frame_json
@@ -105,7 +105,7 @@ class Tracker:
 
 
 if __name__ == '__main__':
-    learner = KeyPointLearner().to(device)
+    learner = KeyPointLearnerGAT(AT_LAYER, AT_MULTI).to(device)
     load_model('../../test/resource/model.pkl', learner)
 
     learner.eval()

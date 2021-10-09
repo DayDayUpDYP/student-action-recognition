@@ -18,11 +18,12 @@ class GATLayer(Module):
         self.softmax = Softmax(dim=2)
         self.activation = LeakyReLU(negative_slope=0.2)
 
-    def forward(self, x):
+    def forward(self, p, x):
         h_hat = torch.matmul(x, self.W)
 
         h_sum = h_hat.permute([0, 2, 1, 3]) + h_hat
-        h_sum = self.softmax(self.activation(self.mlp(h_sum)))
+        h_sum = self.softmax(self.activation(self.mlp(h_sum)) * p)
+        h_sum = self.softmax(h_sum)
 
         h_hat = h_hat * h_sum
         h_hat = torch.sum(h_hat, dim=2)
@@ -40,12 +41,13 @@ class GAT(Module):
         self.gat_layers = ModuleList()
         for i in range(multi_num):
             self.gat_layers.append(GATLayer(input_features, output_features))
+        self.norm = BatchNorm2d(1)
 
-    def forward(self, x):
+    def forward(self, p, x):
         dev = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         result = torch.zeros(size=(x.shape[0], 1, x.shape[2], self.output_features), device=dev)
         for layer in self.gat_layers:
-            result += layer(x)
+            result += layer(p, x)
         result = result / self.multi_num
         result = self.activation(result)
         return result

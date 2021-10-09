@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     total_rate = 0
 
-    learner = KeyPointLearnerGAT(3, 8).to(device)
+    learner = KeyPointLearnerGAT(AT_LAYER, AT_MULTI).to(device)
 
     criterion = nn.CrossEntropyLoss().to(device)
 
