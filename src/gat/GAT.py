@@ -21,8 +21,9 @@ class GATLayer(Module):
     def forward(self, p, x):
         h_hat = torch.matmul(x, self.W)
 
-        h_sum = h_hat.permute([0, 2, 1, 3]) + h_hat
-        h_sum = self.softmax(self.activation(self.mlp(h_sum)) * p)
+        # h_sum = h_hat.permute([0, 2, 1, 3]) + h_hat * p
+        h_sum = h_hat.permute([0, 2, 1, 3])
+        h_sum = self.softmax(self.activation(self.mlp(h_sum)))
         h_sum = self.softmax(h_sum)
 
         h_hat = h_hat * h_sum

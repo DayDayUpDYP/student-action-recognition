@@ -4,14 +4,19 @@ import cv2
 import numpy as np
 from torchvision.transforms import transforms
 
+from rules.statistics import Statistic
 from utils.ImageProcess import std_coordinate
 from utils.ImageProcess import ImageProcess
 from models import KeyPointLearner, KeyPointLearnerGAT
 from conf import *
 from utils.Visualizer import Visualizer
 
+from rules.simple_rules import is_sit, is_handsup, is_stand
+
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+logger = Statistic()
 
 
 def load_model(path, model: torch.nn.Module):
@@ -39,7 +44,53 @@ def check_frame(sub, data):
     return False
 
 
-def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
+def paint_rule(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
+    if not check_frame(frame_sub, frame_data):
+        return frame
+    person_list = frame_data[frame_sub]
+    cnt = 0
+    for element in person_list:
+        if element['score'] > 1.:
+            np_keypoints = np.array(element['keypoints'])
+
+            k = 0
+            if is_stand(np_keypoints):
+                # stand
+                k = 1
+            elif is_handsup(np_keypoints):
+                # hansup
+                k = 2
+            elif is_sit(np_keypoints):
+                # sit
+                k = 3
+
+            clr = (0, 128, 128)
+            if k == 1:
+                clr = (255, 0, 0)
+            elif k == 2:
+                clr = (0, 255, 0)
+            elif k == 3:
+                clr = (0, 0, 255)
+
+            # if k == 'stand':
+            #     frame = Visualizer.show_line(frame, element)
+            (box_x, box_y, box_h, box_w) = element['box']
+
+            frame = Visualizer.show_anchor(frame, element)
+
+            sub = logger.find_person_index(box_x, box_y, box_h, box_w)
+
+            frame = Visualizer.show_label(frame, int(box_x), int(box_y), f'{k}__{sub}', clr)
+
+            logger.update_person(box_x, box_y, box_h, box_w, k, frame_sub)
+
+            cnt += 1
+            if cnt == scan_cnt:
+                return frame
+    return frame
+
+
+def paint_model(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
     if not check_frame(frame_sub, frame_data):
         return frame
     person_list = frame_data[frame_sub]
@@ -68,7 +119,7 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
                         clr = (255, 0, 0)
                     elif k == 'handsup':
                         clr = (0, 255, 0)
-                    if k == 'handsup':
+                    if k == 'sit' and element['score'] >= 1.6:
                         frame = Visualizer.show_line(frame, element)
                         frame = Visualizer.show_anchor(frame, element)
                         frame = Visualizer.show_label(frame, int(element['box'][0]), int(element['box'][1]), k, clr)
@@ -79,7 +130,10 @@ def paint(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
 
 
 if __name__ == '__main__':
-    with open('../test/resource/video/src_videos/3/alphapose-results.json', 'r') as fp:
+
+    video_name = 'classroom'
+
+    with open(f'../test/resource/video/src_videos/{video_name}/alphapose-results.json', 'r') as fp:
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
@@ -88,39 +142,31 @@ if __name__ == '__main__':
 
     learner.eval()
 
-    cap = cv2.VideoCapture("../test/resource/video/src_videos/3/demo_all_Trim_3.avi")  # 读取视频文件
+    cap = cv2.VideoCapture(f"../test/resource/video/src_videos/{video_name}/{video_name}_Trim.avi")  # 读取视频文件
     frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter('../test/resource/video/output001.avi', fourcc, 30, (frame_w, frame_h))
     frame_cnt = 0
 
-    cap_cnt = 0
-    gap_cnt = 0
-    is_painting = False
-
     while True:
         ret, frame = cap.read()
         if ret:
-            frame_cnt += 1
-            frame = paint(frame, frame_cnt, frame_data, learner, -1, keypoints_num=26)
-
-            # if is_painting:
-            #     cap_cnt += 1
-            #     if cap_cnt == 120:
-            #         is_painting = False
-            #         cap_cnt = 0
-            #     frame = paint(frame, frame_cnt, frame_data, learner, 5, keypoints_num=26)
-            # else:
-            #     gap_cnt += 1
-            #     if gap_cnt == 90:
-            #         is_painting = True
-            #         gap_cnt = 0
+            frame = paint_rule(frame, frame_cnt, frame_data, learner, -1, keypoints_num=26)
 
             out.write(frame)
             cv2.imshow("frame", frame)
+
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+            frame_cnt += 1
         else:
             break
     cap.release()
+
+    print(f'total frame = {frame_cnt}')
+
+    logger.save_data('../test/resource/logging.json')
+    logger.show_data(10)

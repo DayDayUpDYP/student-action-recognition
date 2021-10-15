@@ -91,7 +91,7 @@ class Tracker:
                                            color=(0, 0, 255))
                     # for i in range(len(self.y_data[idx])):
                 plt.ion()
-                plt.plot(x[:frame_cnt], self.y_data[idx][:frame_cnt])
+                plt.scatter(x[:frame_cnt], self.y_data[idx][:frame_cnt])
                 plt.show()
                 plt.pause(0.005)
                 plt.clf()
@@ -116,3 +116,4 @@ if __name__ == '__main__':
     tracker.track()
 
     tracker.plot_track(36)
+    # tracker.plot_track(11)
