@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 import torchvision
 
+from experiment.coders import GeneratorResNet
+
 
 class GroupNN(Module):
     def __init__(self, base_num, base_dim):
@@ -62,14 +64,16 @@ def base_test():
 
 
 def train(EPOCH, train_loader, model):
-    criterion = MSELoss().to(dev)
+    criterion = L1Loss().to(dev)
     optimizer = torch.optim.Adam(group.parameters(), lr=0.0005)
 
     for epoch in range(EPOCH):
         for sub, (x, _) in enumerate(train_loader):
             x = x.to(dev)
-            r = torch.rand_like(x, requires_grad=False)
-            loss = criterion(model(x @ r).detach(), (model(x) @ model(r)))
+            x = x.repeat(1, 3, 1, 1)
+            pred_img, code = model(x)
+
+            loss = criterion(input=pred_img, target=x)
 
             optimizer.zero_grad()
             loss.backward()
@@ -84,20 +88,48 @@ def train(EPOCH, train_loader, model):
 def test(model, test_loader):
     model.eval()
 
-    for sub, (x, _) in enumerate(test_loader):
+    test_loader = list(test_loader)
+
+    def get_code(sub):
+        x = test_loader[sub][0].to(dev)
         x = x.to(dev)
-        r = torch.rand_like(x, requires_grad=False)
+        x = x.repeat(1, 3, 1, 1)
         x_cpu = x.cpu()
-        plt.figure(1)
+        r_res, code = model(x)
+        r_res = r_res.cpu().detach().numpy()
+        return x_cpu, r_res, code
+
+    row = 6
+    col = 6
+
+    for sub, (x, _) in enumerate(test_loader):
+        x_cpu, r_res, code_1 = get_code(sub)
+
+        plt.subplot(row, col, 1)
+        plt.title('x')
         plt.imshow(x_cpu[0, 0, :, :], cmap='gray', interpolation='none')
-
-        plt.figure(2)
-        r_res = model(r).cpu().detach().numpy()
+        plt.subplot(row, col, 2)
+        plt.title('pred_x')
         plt.imshow(r_res[0, 0, :, :], cmap='gray', interpolation='none')
 
-        plt.figure(4)
-        r_res = (r @ x).cpu().detach().numpy()
+        x_cpu, r_res, code_2 = get_code(sub + 1)
+
+        plt.subplot(row, col, 3)
+        plt.title('x')
+        plt.imshow(x_cpu[0, 0, :, :], cmap='gray', interpolation='none')
+        plt.subplot(row, col, 4)
+        plt.title('pred_x')
         plt.imshow(r_res[0, 0, :, :], cmap='gray', interpolation='none')
+
+
+        # code_3[:, :16, :, :] = code_1[:, :16, :, :, 0]
+        for i in range(32):
+            code_3 = torch.zeros_like(code_1.squeeze())
+            code_3[:, :i, :, :] = code_1[:, :i, :, :, 0]
+            code_3[:, i:, :, :] = code_2[:, i:, :, :, 0]
+            r_res = model.dec(code_3).cpu().detach().numpy()
+            plt.subplot(row, col, 4 + i + 1)
+            plt.imshow(r_res[0, 0, :, :], cmap='gray', interpolation='none')
 
         plt.show()
         input()
@@ -111,6 +143,7 @@ if __name__ == '__main__':
             train=True,
             download=True,
             transform=torchvision.transforms.Compose([
+                torchvision.transforms.Resize((32, 32)),
                 torchvision.transforms.ToTensor(),
                 torchvision.transforms.Normalize(
                     (0.1307,), (0.3081,))
@@ -123,18 +156,21 @@ if __name__ == '__main__':
     test_loader = torch.utils.data.DataLoader(
         torchvision.datasets.MNIST('../test/mnist/', train=False, download=True,
                                    transform=torchvision.transforms.Compose([
+                                       torchvision.transforms.Resize((32, 32)),
                                        torchvision.transforms.ToTensor(),
                                        torchvision.transforms.Normalize(
                                            (0.1307,), (0.3081,))
                                    ])),
         batch_size=32, shuffle=True)
 
-    group = GroupNN(28, 28).to(dev)
+    # group = GroupNN(28, 28).to(dev)
 
-    EPOCH = 5
+    group = GeneratorResNet(4, (3, 32, 32), 4).to(dev)
 
-    # train(EPOCH, train_loader, group)
+    EPOCH = 1
 
-    group.load_state_dict(torch.load('../../test/group.pkl'))
+    train(EPOCH, train_loader, group)
+
+    # group.load_state_dict(torch.load('../../test/group.pkl'))
 
     test(group, test_loader)
