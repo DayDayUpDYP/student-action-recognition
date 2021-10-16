@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from torchvision.transforms import transforms
 
+from rules.face_direction import FaceDirection
 from rules.statistics import Statistic
 from utils.ImageProcess import std_coordinate
 from utils.ImageProcess import ImageProcess
@@ -81,6 +82,8 @@ def paint_rule(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
             sub = logger.find_person_index(box_x, box_y, box_h, box_w)
 
             frame = Visualizer.show_label(frame, int(box_x), int(box_y), f'{k}__{sub}', clr)
+
+            frame = FaceDirection.draw_direction(frame, element['keypoints'])
 
             logger.update_person(box_x, box_y, box_h, box_w, k, frame_sub)
 

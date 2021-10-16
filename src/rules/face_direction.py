@@ -25,7 +25,8 @@ class FaceDirection:
             if element['image_id'] == img_name:
                 return self.draw_direction(img, element['keypoints'])
 
-    def draw_direction(self, img, keypoints):
+    @staticmethod
+    def draw_direction(img, keypoints):
         # mid_12 = int((keypoints[1 * 3] + keypoints[2 * 3]) / 2), int((keypoints[1 * 3 + 1] + keypoints[2 * 3 + 1]) / 2)
         # mid_12 = int(keypoints[0]), int(keypoints[1])
         # mid_34 = int((keypoints[3 * 3] + keypoints[4 * 3]) / 2), int((keypoints[4 * 3 + 1] + keypoints[4 * 3 + 1]) / 2)
@@ -37,8 +38,14 @@ class FaceDirection:
         B = -(x2 - x1)
         C = -x1 * (y2 - y1) + y2 * (x2 - x1)
         nose_kp = int(keypoints[0]), int(keypoints[1])
-        x = int((B * B * nose_kp[0] - A * B * nose_kp[1] - A * C) / (A * A + B * B))
-        y = int((-A * B * nose_kp[0] + A * A * nose_kp[1] - B * C) / (A * A + B * B))
+
+        # if A * A + B * B == 0:
+        #     return img
+        # x = int((B * B * nose_kp[0] - A * B * nose_kp[1] - A * C) / (A * A + B * B))
+        # y = int((-A * B * nose_kp[0] + A * A * nose_kp[1] - B * C) / (A * A + B * B))
+
+        x = int((x1 + x2) / 2)
+        y = int((y1 + y2) / 2)
 
         img = cv2.arrowedLine(img, (x, y), nose_kp, color=(255, 0, 0), thickness=3, tipLength=0.3)
         return img

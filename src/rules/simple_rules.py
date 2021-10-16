@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import numpy as np
 
 
@@ -58,5 +61,31 @@ def is_stand(keypoints):
     return inp_1 > 0.99 and inp_2 > 0.99
 
 
+def validation(dir_path):
+    with open(dir_path / 'alphapose-results.json', 'r') as fp:
+        json_file = json.load(fp)
+    total = 0.
+    correction = 0
+
+    for file in dir_path.rglob('*.jpg'):
+        file_name = file.name
+        label_name = file.name[:file.name.find('_')]
+        for item in json_file:
+            if item['image_id'] == file_name:
+                np_keypoints = item['keypoints']
+                k = 'unknown'
+                if is_stand(np_keypoints):
+                    k = 'stand'
+                elif is_handsup(np_keypoints):
+                    k = 'handsup'
+                elif is_sit(np_keypoints):
+                    k = 'sit'
+                total += 1
+                if k == label_name:
+                    correction += 1
+
+    print(f'correct rate = {correction * 1. / total * 100}%')
+
+
 if __name__ == '__main__':
-    pass
+    validation(Path('../../test/resource/val'))
