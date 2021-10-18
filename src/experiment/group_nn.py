@@ -169,8 +169,8 @@ if __name__ == '__main__':
 
     EPOCH = 1
 
-    # train(EPOCH, train_loader, group)
+    train(EPOCH, train_loader, group)
 
-    group.load_state_dict(torch.load('../../test/group.pkl'))
+    # group.load_state_dict(torch.load('../../test/group.pkl'))
 
     test(group, test_loader)

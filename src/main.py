@@ -1,13 +1,12 @@
 import torch
 from torch import nn
 
-from dataset import KeyPointDataset, RulesDataset
+from dataset import KeyPointDataset
 from torch.utils.data import DataLoader
 
 from models import KeyPointLearner, KeyPointLearnerGAT
 
 from conf import *
-from simple_mlp import SimpleMLP
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -23,12 +22,11 @@ def load_model(path, model: nn.Module):
 
 def train(dataloader, learner, criterion, optimizer, with_metric=False):
     for i_epoch in range(EPOCH):
-        for sub, (label, keypoints, distance, angle) in enumerate(dataloader):
+        for sub, (label, keypoints_pm, keypoints_m) in enumerate(dataloader):
             label = label.to(device)
-
-            x = torch.cat([keypoints.to(device), distance.to(device), angle.to(device)], dim=1).to(device)
-
-            pred = learner(x)
+            keypoints_pm = keypoints_pm.to(device).float()
+            keypoints_m = keypoints_m.to(device).float()
+            pred = learner(keypoints_pm, keypoints_m)
             # print(keypoints.type(), keypoints_m.type())
             # print(pred.size(), label.size())
             loss_v = criterion(input=pred, target=label)
@@ -43,12 +41,11 @@ def test(dataloader, learner):
     learner.eval()
     correct = 0
     total = 0
-    for sub, (label, keypoints, distance, angle) in enumerate(dataloader):
+    for sub, (label, keypoints, keypoints_m) in enumerate(dataloader):
         label = label.to(device)
-        # keypoints = keypoints.to(device).float()
-        # keypoints_m = keypoints_m.to(device).float()
-        x = torch.cat([keypoints.to(device), distance.to(device), angle.to(device)], dim=1).to(device)
-        pred = learner(x)
+        keypoints = keypoints.to(device).float()
+        keypoints_m = keypoints_m.to(device).float()
+        pred = learner(keypoints, keypoints_m)
         pred_res = pred.argmax(dim=1)
         correct += (pred_res == label).sum().item()
         total += pred.size()[0]
@@ -58,14 +55,14 @@ def test(dataloader, learner):
 
 if __name__ == '__main__':
     train_dataloader = DataLoader(
-        RulesDataset('../test/resource/output', keypoint_num=26),
+        KeyPointDataset('../test/resource/output', keypoint_num=26),
         batch_size=32,
         shuffle=True,
         num_workers=0
     )
 
     val_dataloader = DataLoader(
-        RulesDataset('../test/resource/val', keypoint_num=26),
+        KeyPointDataset('../test/resource/val', keypoint_num=26),
         batch_size=32,
         shuffle=True,
         num_workers=0
@@ -73,9 +70,7 @@ if __name__ == '__main__':
 
     total_rate = 0
 
-    # learner = KeyPointLearnerGAT(AT_LAYER, AT_MULTI).to(device)
-
-    learner = SimpleMLP(26, 5, 5).to(device)
+    learner = KeyPointLearnerGAT(AT_LAYER, AT_MULTI).to(device)
 
     criterion = nn.CrossEntropyLoss().to(device)
 
