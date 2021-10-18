@@ -47,7 +47,10 @@ class ImageProcess:
             return None
         # if len(person_dict['keypoints']) == 408:
         #     print(person_dict['image_id'])
-        keypoints_xyp = std_coordinate(std_h, std_w, person_dict['box'], person_dict['keypoints'], 26)
+        if std_h is None or std_w is None:
+            return person_dict
+        else:
+            keypoints_xyp = std_coordinate(std_h, std_w, person_dict['box'], person_dict['keypoints'], 26)
         return keypoints_xyp[:keypoints_num]
 
     @staticmethod
@@ -79,12 +82,12 @@ class ImageProcess:
         #     result[i] = temp
         return result
 
-    def get_keypoints(self, keypoints_num, std_h, std_w):
+    def get_keypoints(self, keypoints_num, std_h=None, std_w=None):
         for img_path in self.in_path.rglob('*.jpg'):
             keypoints = self.__get_keypoints__(img_path, keypoints_num, std_h, std_w)
             if keypoints is None:
                 continue
-            yield img_path.stem, keypoints
+            yield img_path.parent.stem, keypoints
 
     def get_data(self, keypoints_num, std_h, std_w):
         for img_name, keypoints in self.get_keypoints(keypoints_num, std_h, std_w):
@@ -94,9 +97,42 @@ class ImageProcess:
             # keypoints_pm = keypoints_pm / np.sum(keypoints_pm, axis=1)
             yield img_name, keypoints_pm, ImageProcess.__get_matrix__(keypoints, keypoints_num)
 
+    def get_rule_data(self, ):
+
+        def dis_ab(x1, y1, x2, y2):
+            return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+        def angel_ab(x1, y1, x2, y2):
+            cos = (x1 * x2 + y1 * y2) / (np.sqrt(x1 ** 2 + y1 ** 2) * np.sqrt(x2 ** 2 + y2 ** 2) + 0.0003)
+            return cos
+
+        for img_name, person_data in self.get_keypoints(26, None, None):
+            keypoints = person_data['keypoints']
+            keypoints = np.array(keypoints).reshape((len(keypoints) // 3, 3))
+            keypoints[:, 0] = keypoints[:, 0] / person_data['box'][3]
+            keypoints[:, 1] = keypoints[:, 1] / person_data['box'][2]
+
+            distance = np.zeros(5)
+            distance[0] = dis_ab(keypoints[17][0], keypoints[17][1], keypoints[18][0], keypoints[18][1])
+            distance[1] = dis_ab(keypoints[6][0], keypoints[6][1], keypoints[8][0], keypoints[8][1])
+            distance[2] = dis_ab(keypoints[8][0], keypoints[8][1], keypoints[10][0], keypoints[10][1])
+            distance[3] = dis_ab(keypoints[5][0], keypoints[5][1], keypoints[7][0], keypoints[7][1])
+            distance[4] = dis_ab(keypoints[7][0], keypoints[7][1], keypoints[9][0], keypoints[9][1])
+
+            angle = np.zeros(5)
+            angle[0] = angel_ab(keypoints[17][0] - keypoints[18][0], keypoints[17][1] - keypoints[17][0], 0, 1)
+            angle[1] = angel_ab(keypoints[6][0] - keypoints[5][0], keypoints[6][1] - keypoints[6][1],
+                                keypoints[6][0] - keypoints[8][0], keypoints[6][1] - keypoints[8][1])
+            angle[2] = angel_ab(keypoints[10][0] - keypoints[8][0], keypoints[10][1] - keypoints[8][1], 0, 1)
+            angle[3] = angel_ab(keypoints[5][0] - keypoints[6][0], keypoints[5][1] - keypoints[6][1],
+                                keypoints[5][0] - keypoints[7][0], keypoints[5][1] - keypoints[7][1])
+            angle[4] = angel_ab(keypoints[7][0] - keypoints[9][0], keypoints[7][1] - keypoints[9][1], 0, 1)
+
+            yield img_name, keypoints, distance, angle
+
 
 if __name__ == '__main__':
     ip = ImageProcess(in_path='../../test/resource/res')
-    for name, m in ip.get_data(26, 5, 5):
-        print(name, m)
+    for name, kp, dis, angle in ip.get_rule_data():
+        print(name, kp, dis, angle)
         input()
