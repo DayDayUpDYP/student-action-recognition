@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     frame_data = split_frame_json(json_file)
     learner = KeyPointLearnerGAT(AT_LAYER, AT_MULTI).to(device)
-    load_model('../test/resource/model.pkl', learner)
+    # load_model('../test/resource/model.pkl', learner)
 
     learner.eval()
 
