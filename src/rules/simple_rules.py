@@ -78,12 +78,6 @@ def is_stand(keypoints):
     inp_1 = inner_product(v0, v1)
     inp_2 = inner_product(v0, v2)
 
-    ul1 = unit_vector(12, 14, keypoints)
-    ul2 = unit_vector(14, 16, keypoints)
-
-    ur1 = unit_vector(11, 13, keypoints)
-    ur2 = unit_vector(13, 15, keypoints)
-
     flag = True
     if keypoints[16 * 3 + 2] >= 0.8 and keypoints[15 * 3 + 2] >= 0.8:
         # if abs(ul1[0] * ul2[0] + ul1[1] * ul2[1] - 1) <= 0.2 and abs(ur1[0] * ur2[0] + ur1[1] * ur2[1] - 1) <= 0.2:

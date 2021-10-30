@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from torchvision.transforms import transforms
 
+from BPF.BPF import BPF
 from rules.face_direction import FaceDirection
 from rules.statistics import Statistic
 from utils.ImageProcess import std_coordinate
@@ -132,6 +133,9 @@ def fix_symmetric(person_list):
     return person_list
 
 
+param_filed = []
+
+
 def defect_anchor_finding(frame, frame_sub, frame_data):
     if not check_frame(frame_sub, frame_data):
         return frame
@@ -142,22 +146,38 @@ def defect_anchor_finding(frame, frame_sub, frame_data):
     for element in person_list:
         x, y, _, _, H, R, xc, yc = get_bpf(frame, element)
 
-        if H / R >= 150 and element['score'] > 1.5:
-            frame = Visualizer.show_anchor(frame, element)
-            frame = Visualizer.show_line(frame, element, sub_index=12)
-            # frame = Visualizer.show_label(frame, int(x), int(y), f'{theta :.1f}', (0, 0, 255))
-            frame = cv2.circle(frame, (xc, yc), 1, (255, 255, 255), 4)
+        if element['score'] > 1.5:
 
-            keypoints = element['keypoints']
+            cur_feature = BPF.pack_feature(element['keypoints'])
+            if frame_sub <= 10:
+                token = BPF(xc, yc)
+                token.features.append(cur_feature)
+                if len(param_filed) == 0:
+                    param_filed.append(token)
+                else:
+                    flag = False
+                    for bpf in param_filed:
+                        if bpf == token:
+                            flag = True
+                    if not flag:
+                        param_filed.append(token)
+            else:
+                flag = False
+                found = None
+                for bpf in param_filed:
+                    if bpf.equal((xc, yc)):
+                        bpf.update_features(cur_feature)
+                        bpf.location = (xc, yc)
+                        flag = True
+                        found = bpf
+                        break
+                if flag:
+                    frame = Visualizer.show_anchor(frame, element)
+                    frame = Visualizer.show_line(frame, element, sub_index=12)
+                    frame = Visualizer.show_label(frame, int(x), int(y), f'{found.behavior}', (0, 0, 255))
+                    frame = cv2.circle(frame, found.location, 1, (255, 255, 255), 4)
 
-            # print(dis1, dis2)
-
-            # frame = cv2.circle(frame, theta, 1, (255, 255, 255), 3)
-            # frame = cv2.line(frame, theta0, (xc, yc), color=(0, 0, 0), thickness=2)
-            # frame = cv2.line(frame, (xc, yc), theta, color=(0, 0, 0), thickness=2)
-            # print(np.array(element['keypoints']).reshape(26, 3))
-            # print('*' * 10)
-            ret = True
+            ret = False
     return frame, ret
 
 
@@ -254,7 +274,7 @@ def paint_model(frame, frame_sub, frame_data, learner, scan_cnt, keypoints_num):
 
 if __name__ == '__main__':
 
-    with open(f'../test/resource/video/src_videos/only_class/alphapose-results-1.json', 'r') as fp:
+    with open(f'../test/resource/mv/alphapose-4.json', 'r') as fp:
         json_file = json.load(fp)
 
     frame_data = split_frame_json(json_file)
@@ -263,7 +283,7 @@ if __name__ == '__main__':
 
     learner.eval()
 
-    cap = cv2.VideoCapture(f"../test/resource/video/src_videos/only_class/only_class_Trim_1.mp4")  # 读取视频文件
+    cap = cv2.VideoCapture(f"../test/resource/mv/4.mp4")  # 读取视频文件
     frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fourcc = cv2.VideoWriter_fourcc(*'XVID')

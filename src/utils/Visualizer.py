@@ -16,7 +16,7 @@ class Visualizer:
     @staticmethod
     def show_label(img, x, y, label, clr):
         font = cv2.FONT_HERSHEY_SIMPLEX
-        return cv2.putText(img, label, (x, y), font, 0.4, clr, 1)
+        return cv2.putText(img, label, (x, y), font, 0.9, clr, 2)
 
     @staticmethod
     def show_keypoint(img, img_data):
