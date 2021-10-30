@@ -9,14 +9,14 @@ class Visualizer:
     def show_anchor(img, img_data, color=(0, 255, 0)):
         x = int(img_data['box'][0])
         y = int(img_data['box'][1])
-        h = int(img_data['box'][2])
-        w = int(img_data['box'][3])
-        return cv2.rectangle(img, (x, y), (x + h, y + w), color, 2)
+        w = int(img_data['box'][2])
+        h = int(img_data['box'][3])
+        return cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
 
     @staticmethod
     def show_label(img, x, y, label, clr):
         font = cv2.FONT_HERSHEY_SIMPLEX
-        return cv2.putText(img, label, (x, y), font, 0.8, clr, 2)
+        return cv2.putText(img, label, (x, y), font, 0.4, clr, 1)
 
     @staticmethod
     def show_keypoint(img, img_data):
@@ -29,12 +29,14 @@ class Visualizer:
         return img
 
     @staticmethod
-    def show_line(img, img_data):
+    def show_line(img, img_data, sub_index=26):
         l_pair = [
             (0, 1), (0, 2), (1, 3), (2, 4),  # Head
             (5, 18), (6, 18), (5, 7), (7, 9), (6, 8), (8, 10),  # Body
-            (17, 18), (18, 19), (19, 11), (19, 12),
-            (11, 13), (12, 14), (13, 15), (14, 16),
+            (17, 18), (18, 19),  # up
+            (19, 11), (19, 12),
+            (11, 13), (12, 14),  # mid
+            (13, 15), (14, 16),
             (20, 24), (21, 25), (23, 25), (22, 24), (15, 24), (16, 25),  # Foot
             (26, 27), (27, 28), (28, 29), (29, 30), (30, 31), (31, 32), (32, 33), (33, 34), (34, 35), (35, 36),
             (36, 37),
@@ -82,7 +84,7 @@ class Visualizer:
             y = int(img_data['keypoints'][i + 1])
             p = img_data['keypoints'][i + 2]
             nodes.append((x, y, p))
-        for index in range(26):
+        for index in range(sub_index):
             node1_index = l_pair[index][0]
             node2_index = l_pair[index][1]
             if node1_index >= 26 or node2_index >= 26:
@@ -93,6 +95,8 @@ class Visualizer:
                 img = cv2.circle(img, (x1, y1), 1, p_color[node1_index], 2)
                 img = cv2.circle(img, (x2, y2), 1, p_color[node2_index], 2)
                 img = cv2.line(img, (x1, y1), (x2, y2), line_color[index], 2)
+                # img = Visualizer.show_label(img, x1, y1, f"{node1_index}", (0, 0, 255))
+                # img = Visualizer.show_label(img, x2, y2, f"{node2_index}", (0, 0, 255))
         return img
 
     def __init__(self, img_path, json_path):
